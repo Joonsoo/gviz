@@ -35,10 +35,6 @@ class GraphLayout(
     check(edgeMinLengths.values.all { it >= 0 })
   }
 
-  fun calculateRanks(): Map<String, Int> =
-    RankCalculator(graph, edgeWeights, edgeMinLengths, minRanks, maxRanks, sameRanks)
-      .calculateRanks()
-
   // 랭크가 2이상 벌어진 노드 사이의 엣지를 사이의 랭크에 virtual node를 추가해준 그래프를 반환
   fun adjacentGraph(ranks: Map<String, Int>): GraphEx {
     // TODO self node는 제거, multi edge는 병합
@@ -64,42 +60,26 @@ class GraphLayout(
     TODO()
   }
 
-  // 노드 X축 좌표 계산.
-  // 노드 ID -> X축 좌표(혹은 Y축 좌표). 각 rank의 높이를 구하고 inter rank 간격을 더해서 밖에서 Y축 계산
-  fun calculateXCoords(graph: GraphEx, rankOrders: List<List<String>>): Map<String, Double> {
-    TODO()
-  }
-
-  // 각 랭크의 Y축 좌표 계산.
-  fun calculateYCoords(graph: GraphEx, rankOrders: List<List<String>>): Map<Int, Double> {
-    TODO()
-  }
-
   fun calculateNodeCoords(
-    graph: GraphEx,
+    graphEx: GraphEx,
     xCoords: Map<String, Double>,
     yCoords: Map<Int, Double>
   ): Map<String, Position> {
     TODO()
   }
 
-  fun calculateEdgeSplines(
-    graph: GraphEx,
-    nodeCoords: Map<String, Position>
-  ): Map<String, EdgeSpline> {
-    TODO()
-  }
-
   override fun layoutGraph(): GraphLayoutResult {
-    val ranks = calculateRanks()
+    val ranks = RankingAlgorithm(graph, edgeWeights, edgeMinLengths, minRanks, maxRanks, sameRanks)
+      .calculateRanks()
     // 인접하지 않은(2이상 떨어진) 랭크 사이의 엣지는 가상 노드를 추가해서 모든 엣지가 인접한 랭크 사이에만 존재하도록 만들기
     val adjacentGraph = adjacentGraph(ranks)
     val rankOrders = calculateRankOrders(adjacentGraph)
-    val xCoords = calculateXCoords(adjacentGraph, rankOrders)
-    val yCoords = calculateYCoords(adjacentGraph, rankOrders)
+    val coordAlgorithm = CoordAlgorithm()
+    val yCoords = coordAlgorithm.calculateYCoords(adjacentGraph, rankOrders)
+    val xCoords = coordAlgorithm.calculateXCoords(adjacentGraph, rankOrders)
     val nodeCoords = calculateNodeCoords(adjacentGraph, xCoords, yCoords)
     // TODO 중복 엣지 처리
-    val edgeSplines = calculateEdgeSplines(adjacentGraph, nodeCoords)
+    val edgeSplines = EdgeSplineAlgorithm().calculateEdgeSplines(adjacentGraph, nodeCoords)
     return GraphLayoutResult(nodeCoords.filterKeys { graph.nodes.contains(it) }, edgeSplines)
   }
 }

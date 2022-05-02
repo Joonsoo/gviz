@@ -4,11 +4,11 @@ package com.giyeok.gviz.graph.algorithms.graphvizdotlike
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 
-class RankCalculatorTest {
+class RankingAlgorithmTest {
 
   @Test
   fun testInitRank() {
-    val rankCalc = RankCalculator(Graphs.graph2)
+    val rankCalc = RankingAlgorithm(Graphs.graph2)
     val g0 = rankCalc.initialGraphEx()
 
     val g1 = rankCalc.prepareRankingGraph(g0)
@@ -26,7 +26,7 @@ class RankCalculatorTest {
 
   @Test
   fun testInitialFeasibleTree() {
-    val rankCalc = RankCalculator(Graphs.graph4)
+    val rankCalc = RankingAlgorithm(Graphs.graph4)
     val g0 = rankCalc.initialGraphEx()
 
     val g1 = rankCalc.initialFeasibleTree(g0)
@@ -35,7 +35,7 @@ class RankCalculatorTest {
 
   @Test
   fun testRemoveCycles1() {
-    val rankCalc = RankCalculator(Graphs.genCharGraph("ab", "ba"))
+    val rankCalc = RankingAlgorithm(Graphs.genCharGraph("ab", "ba"))
     val g0 = rankCalc.initialGraphEx()
     val g1 = rankCalc.removeCycles(g0)
     println(g1)
@@ -43,7 +43,7 @@ class RankCalculatorTest {
 
   @Test
   fun testRemoveCycles2() {
-    val rankCalc = RankCalculator(Graphs.genCharGraph("ab", "bc", "cd", "db", "cx"))
+    val rankCalc = RankingAlgorithm(Graphs.genCharGraph("ab", "bc", "cd", "db", "cx"))
     val g0 = rankCalc.initialGraphEx()
     val g1 = rankCalc.removeCycles(g0)
     println(g1)
@@ -64,7 +64,7 @@ class RankCalculatorTest {
 //        setOf("POSIX", "ksh-POSIX"),
 //      )
 //    )
-    val rankCalc = RankCalculator(Graphs.graph4)
+    val rankCalc = RankingAlgorithm(Graphs.graph4)
     val ranks = rankCalc.calculateRanks()
     ranks.entries.groupBy { it.value }.entries.sortedBy { it.key }
       .forEach { entry -> println("${entry.key}: ${entry.value.map { it.key }.sorted()}") }

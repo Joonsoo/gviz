@@ -6,7 +6,7 @@ import com.giyeok.gviz.graph.SizedGraph
 import java.util.*
 
 // TODO graphEx를 파라메터로 받고 나머지는 클래스에서 갖고 있는게 좀 이상함.. 수정할 것
-class RankCalculator(
+class RankingAlgorithm(
   val graph: SizedGraph,
   // edge의 weight. 지정하지 않으면 기본값은 1. 음수이면 안됨.
   val edgeWeights: Map<String, Double> = mapOf(),
