@@ -1,6 +1,7 @@
-package com.giyeok.gviz.graph.algorithms.graphvizdotlike
+package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.graph.*
+import com.giyeok.gviz.layout.graphvizdotlike.utils.GraphExUtils.adjacentGraph
 import com.giyeok.gviz.render.Position
 
 // TODO subgraph는 이 클래스를 활용해서 구현할 수 있을 것 같음
@@ -22,7 +23,7 @@ class GraphLayout(
   val sameRanks: List<Set<String>> = listOf(),
 ) : GraphLayoutAlgorithm {
   init {
-    // 일단은 방향 그래프만 지원
+    // DOT 알고리즘은 방향 그래프만 지원
     check(graph.undirectedEdges.isEmpty())
     check(graph.nodes.containsAll(minRanks))
     check(graph.nodes.containsAll(maxRanks))
@@ -35,14 +36,14 @@ class GraphLayout(
     check(edgeMinLengths.values.all { it >= 0 })
   }
 
-  // 랭크가 2이상 벌어진 노드 사이의 엣지를 사이의 랭크에 virtual node를 추가해준 그래프를 반환
-  fun adjacentGraph(ranks: Map<String, Int>): GraphEx {
-    // TODO self node는 제거, multi edge는 병합
-    TODO()
-  }
+  val initialGraphEx: GraphEx = GraphEx(graph, edgeWeights, edgeMinLengths)
+
+  fun calculateRanks() =
+    RankingAlgorithm(initialGraphEx, edgeWeights, edgeMinLengths, minRanks, maxRanks, sameRanks)
+      .calculateRanks()
 
   // 작은 랭크부터, 각 랭크 내에서 왼쪽(혹은 위쪽)에 나와야할 노드의 ID를 반환.
-  fun calculateRankOrders(graph: GraphEx): List<List<String>> {
+  fun calculateRankOrders(graph: GraphEx, ranks: Map<String, Int>): List<List<String>> {
     // edge crossing을 줄이는 것이 목표
     // 최적 해를 구하는 것은 NP-complete이기 때문에 휴리스틱을 사용한다
 
@@ -56,8 +57,10 @@ class GraphLayout(
     // transpose는:
     // - 현재 랭크 내의 인접한 노드들을 바꾸면 교차하는 엣지의 수가 줄어드는 경우 바꾸고, 아니면 그대로 둔다.
 
-    // TODO 상위 랭크->하위 랭크로 한번, 하위 랭크->상위 랭크로 한번 돌려서 나은 결과를 사용하는게 좋다고 함
-    TODO()
+    // 상위 랭크->하위 랭크로 한번, 하위 랭크->상위 랭크로 한번 돌려서 나은 결과를 사용하는게 좋다고 함
+
+    val orders = RankOrdersAlgorithm(graph.graph, ranks).solve()
+    return orders.ranks.map { it.nodes }
   }
 
   fun calculateNodeCoords(
@@ -69,17 +72,16 @@ class GraphLayout(
   }
 
   override fun layoutGraph(): GraphLayoutResult {
-    val ranks = RankingAlgorithm(graph, edgeWeights, edgeMinLengths, minRanks, maxRanks, sameRanks)
-      .calculateRanks()
+    val ranks = calculateRanks()
     // 인접하지 않은(2이상 떨어진) 랭크 사이의 엣지는 가상 노드를 추가해서 모든 엣지가 인접한 랭크 사이에만 존재하도록 만들기
-    val adjacentGraph = adjacentGraph(ranks)
-    val rankOrders = calculateRankOrders(adjacentGraph)
-    val coordAlgorithm = CoordAlgorithm()
-    val yCoords = coordAlgorithm.calculateYCoords(adjacentGraph, rankOrders)
-    val xCoords = coordAlgorithm.calculateXCoords(adjacentGraph, rankOrders)
+    val (adjacentGraph, aranks) = adjacentGraph(initialGraphEx, ranks)
+    val rankOrders = calculateRankOrders(adjacentGraph, aranks)
+    val nodeCoordAlgorithm = NodeCoordAlgorithm(adjacentGraph, rankOrders)
+    val yCoords = nodeCoordAlgorithm.calculateYCoords()
+    val xCoords = nodeCoordAlgorithm.calculateXCoords()
     val nodeCoords = calculateNodeCoords(adjacentGraph, xCoords, yCoords)
     // TODO 중복 엣지 처리
-    val edgeSplines = EdgeSplineAlgorithm().calculateEdgeSplines(adjacentGraph, nodeCoords)
+    val edgeSplines = EdgeSplineAlgorithm().calculateEdgeSplines(graph, adjacentGraph, nodeCoords)
     return GraphLayoutResult(nodeCoords.filterKeys { graph.nodes.contains(it) }, edgeSplines)
   }
 }

@@ -1,11 +1,13 @@
-package com.giyeok.gviz.graph.algorithms.graphvizdotlike
+package com.giyeok.gviz.layout.graphvizdotlike
 
+import com.giyeok.gviz.graph.BaseGraph
 import com.giyeok.gviz.graph.EdgeSpline
 import com.giyeok.gviz.render.Position
 
 class EdgeSplineAlgorithm {
   fun calculateEdgeSplines(
-    graph: GraphEx,
+    graph: BaseGraph,
+    graphEx: GraphEx,
     nodeCoords: Map<String, Position>
   ): Map<String, EdgeSpline> {
     TODO()

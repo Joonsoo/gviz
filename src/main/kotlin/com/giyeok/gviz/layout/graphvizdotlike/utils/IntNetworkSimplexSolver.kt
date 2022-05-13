@@ -1,122 +1,24 @@
-package com.giyeok.gviz.graph.algorithms.graphvizdotlike
+package com.giyeok.gviz.layout.graphvizdotlike.utils
 
 import com.giyeok.gviz.graph.BaseGraph
-import com.giyeok.gviz.graph.Edge
-import com.giyeok.gviz.graph.SizedGraph
 import java.util.*
 
-// TODO graphEx를 파라메터로 받고 나머지는 클래스에서 갖고 있는게 좀 이상함.. 수정할 것
-class RankingAlgorithm(
-  val graph: SizedGraph,
-  // edge의 weight. 지정하지 않으면 기본값은 1. 음수이면 안됨.
-  val edgeWeights: Map<String, Double> = mapOf(),
-  // edge의 최소 길이. 지정하지 않으면 기본값은 1. 음수이면 안됨.
-  val edgeMinLengths: Map<String, Int> = mapOf(),
-  val minRanks: Set<String> = setOf(),
-  val maxRanks: Set<String> = setOf(),
-  val sameRanks: List<Set<String>> = listOf(),
+/**
+ * Graphviz dot 논문에서 설명하는 network simplex 알고리즘 구현.
+ *
+ * 실제로 network simplex 알고리즘인지 잘은 모르겠음..
+ *
+ *
+ */
+class IntNetworkSimplexSolver(
+  val graph: BaseGraph,
+  val edgeMinLengths: Map<String, Int>,
+  val edgeWeights: Map<String, Double>,
 ) {
-  fun initialGraphEx(): GraphEx = GraphEx(graph, edgeWeights, edgeMinLengths)
-
-  // graphEx에서 minRanks, maxRanks, sameRanks에서 같은 랭크를 가져야된다고 지정된 노드들을 하나로 합치고
-  // maxRanks 노드에서 나가는 엣지와 minRanks 노드로 들어오는 엣지들은 방향을 뒤집은 그래프를 반환
-  fun prepareRankingGraph(graphEx: GraphEx): GraphEx {
-    var graphEx = graphEx
-    if (minRanks.isNotEmpty()) {
-      val minRankNode = graphEx.newId()
-      graphEx = graphEx.mergeNodes(minRanks, minRankNode)
-      // 들어오는 엣지가 없는 노드 v에 대해서는, (minRanks 노드 -> v)인 엣지를 추가하고(minLength=0으로 해서),
-      val noincomingNodes =
-        graphEx.graph.nodes.filter { (graphEx.graph.incomingEdges[it] ?: listOf()).isEmpty() }
-      noincomingNodes.forEach { node ->
-        graphEx = graphEx.addVirtualEdge(Edge(minRankNode, node))
-      }
-      // minRank로 들어오는 엣지들은 방향을 뒤집고 시작
-      (graphEx.graph.incomingEdges[minRankNode] ?: listOf()).forEach { incomingEdge ->
-        graphEx = graphEx.reverseEdge(incomingEdge.edgeName, graphEx.newId())
-      }
-    }
-    if (maxRanks.isNotEmpty()) {
-      val maxRankNode = graphEx.newId()
-      graphEx = graphEx.mergeNodes(maxRanks, maxRankNode)
-      // 나가는 엣지가 없는 노드 v에 대해서는, (v -> maxRanks 노드)인 엣지를 추가한다.
-      val nooutgoingNodes =
-        graphEx.graph.nodes.filter { (graphEx.graph.outgoingEdges[it] ?: listOf()).isEmpty() }
-      nooutgoingNodes.forEach { node ->
-        graphEx = graphEx.addVirtualEdge(Edge(maxRankNode, node))
-      }
-      // maxRank에서 나가는 엣지들은 방향을 뒤집고 시작
-      (graphEx.graph.outgoingEdges[maxRankNode] ?: listOf()).forEach { outgoingEdge ->
-        graphEx = graphEx.reverseEdge(outgoingEdge.edgeName, graphEx.newId())
-      }
-    }
-    sameRanks.forEach { sameRankNodes ->
-      graphEx = graphEx.mergeNodes(sameRankNodes, graphEx.newId())
-    }
-
-    // 같은 두 노드 사이의 여러 엣지는 weight를 모두 더한 하나의 엣지로 치환
-    val edgesByPair = graphEx.graph.directedEdges.entries.groupBy { it.value }
-      .mapValues { e -> e.value.map { it.key }.toSet() }
-    edgesByPair.filter { it.value.size >= 2 }.forEach { pair ->
-      graphEx = graphEx.mergeDirectedEdges(pair.value, graphEx.newId())
-    }
-    return graphEx
-  }
-
-  fun removeCycles(graphEx: GraphEx): GraphEx {
-    // TODO 구현해야함 -> 그런데 이 알고리즘은 논문에 자세히 안나온것같은데..? 그냥 사이클 여러개에 속한 엣지를 뒤집는다는 식으로 하면 되는걸까?
-    // root를 구할 수 있으면, 거기로부터 DFS를 해서 노드들의 partial order를 구할 수 있다
-    // 그러면 엣지는 트리에 속한 엣지이거나, cross edge, forward edge, back edge 중에 하나가 된다.
-    // cross edge는 관계 없는 두 노드 사이의 엣지, forward edge는 한 노드에서 그 하위 노드로 가는 엣지, back edge는 한 노드에서 그 상위 노드로 가는 엣지.
-    // 여기서 back edge의 방향을 바꾸면 그래프에서 사이클을 없앨 수 있다.
-    // 방향을 바꿀 back edge의 수가 최소가 되도록 root를 설정할 수 있으면 좋은데, NP-complete인데다 결과에 별 영향이 없음
-    // -> 가장 많은 사이클에 속한 엣지를 뒤집는 방식의 휴리스틱 사용
-
-    check(graphEx.graph.undirectedEdges.isEmpty())
-    var graphEx = graphEx
-
-    var foundCycle = true
-    while (foundCycle) {
-      foundCycle = false
-      val traversedNodes = mutableSetOf<String>()
-      // edge id -> cycle 갯수
-      val cycleCounter = mutableMapOf<String, Int>()
-
-      // path는 (node id, edge id)의 pair
-      fun traverse(node: String, path: List<Pair<String, String>>, pathNodes: Set<String>) {
-        if (pathNodes.contains(node)) {
-          foundCycle = true
-          val cycleIdx = path.indexOfLast { it.first == node }
-          val cyclePath = path.drop(cycleIdx)
-          cyclePath.forEach { (_, pathEdge) ->
-            cycleCounter[pathEdge] = (cycleCounter[pathEdge] ?: 0) + 1
-          }
-          // 싸이클 발견
-        } else {
-          traversedNodes.add(node)
-          graphEx.graph.outgoingEdgesFrom(node).forEach { namedEdge ->
-            traverse(namedEdge.edge.end, path + Pair(node, namedEdge.edgeName), pathNodes + node)
-          }
-        }
-      }
-      graphEx.graph.nodes.forEach { node ->
-        if (!traversedNodes.contains(node)) {
-          traverse(node, listOf(), setOf())
-        }
-      }
-
-      if (foundCycle) {
-        val maxCycleEdge = cycleCounter.entries.sortedByDescending { it.value }.first()
-        graphEx = graphEx.reverseEdge(maxCycleEdge.key, graphEx.newId())
-      }
-    }
-    return graphEx
-  }
-
   // 각 노드의 랭크 계산. 랭크가 작을수록 위(혹은 왼쪽)에 나옴.
   // minRanks와 maxRanks는 여기서 반영함. 가장 작은 랭크는 0.
   // sameRanks는 여기서는 반영하지 않고 adjustRanks에서 적용함.
-  fun calculateRanks(graphEx: GraphEx): Map<String, Int> {
+  fun solve(): Map<String, Int> {
     // l(Edge(start, end)) = ranking[end] - ranking[start]
     // weighted edge length: 모든 엣지 e에 대해, (l(e) * edgeWeights[e])의 합
     // 목표는 weighted edge length가 최소가 되는 rank를 계산하는 것.
@@ -142,26 +44,26 @@ class RankingAlgorithm(
     // enter_edge(e: Edge) -> 스패닝 트리에서 e를 제거하고 새로 추가할 노드를 찾아서 반환
     // e.end의 컴포넌트에서 e.start의 컴포넌트로 가는 엣지들 중 slack이 가장 작은 엣지를 반환
 
-    val initial = initialFeasibleTree(graphEx)
+    val initial = initialFeasibleTree()
     val tree = initial.spanningTree.toBuilder()
     val ranks = initial.ranks.toMutableMap()
 
     // tree에서 negaitve cut value를 가진 엣지가 있으면(없어질 때까지),
     // - end 컴포넌트 -> start 컴포넌트로 가는 엣지 중 slack이 가장 작은 edge로 치환
     // TODO 지금은 cut value를 매번 새로 계산하는데 개선 가능한듯?
-    var leaveEdge: String? = findNegativeCutValueEdge(graphEx, tree.build())
+    var leaveEdge: String? = findNegativeCutValueEdge(tree.build())
     while (leaveEdge != null) {
-      val (components, replacement) = findReplacement(graphEx, tree.build(), ranks, leaveEdge)
+      val (components, replacement) = findReplacement(tree.build(), ranks, leaveEdge)
 
       // TODO 여기서 이렇게 하는게 맞나..?
-      val slack = graphEx.slackOfEdge(leaveEdge, ranks)
+      val delta = slackOfEdge(replacement, ranks)
       components.second.forEach { node ->
-        ranks[node] = ranks.getValue(node) - slack
+        ranks[node] = ranks.getValue(node) + delta
       }
       tree.edges.remove(leaveEdge)
-      tree.edges.remove(replacement)
+      tree.edges.add(replacement)
 
-      leaveEdge = findNegativeCutValueEdge(graphEx, tree.build())
+      leaveEdge = findNegativeCutValueEdge(tree.build())
     }
 
     // 스패닝 트리를 만든 다음 거기서 랭크 구하기:
@@ -172,33 +74,24 @@ class RankingAlgorithm(
 
     // normalize: 가장 작은 랭크가 0이 되도록 노멀라이즈
     val minValue = ranks.values.minOrNull() ?: 0
-    graphEx.graph.nodes.forEach { node ->
+    graph.nodes.forEach { node ->
       ranks[node] = ranks.getValue(node) - minValue
     }
 
-    // TODO balance: 이건 뭔지 잘 모르겠음
-
-    // replacedNodes 반영해서 실제 랭크 반환
-    val finalRanks = mutableMapOf<String, Int>()
-    ranks.forEach { (node, rank) ->
-      val originalNodes = graphEx.replacedNodes[node] ?: setOf(node)
-      originalNodes.forEach { finalRanks[it] = rank }
-    }
-
-    return finalRanks
+    return ranks
   }
 
-  fun initialFeasibleTree(graphEx: GraphEx): RankSpanningTree {
+  fun initialFeasibleTree(): RankSpanningTree {
     // Figure 2-2. feasible_tree()
 
-    val ranks = initRank(graphEx).toMutableMap()
+    val ranks = initRank().toMutableMap()
 
     // 코드랑 논문이랑 알고리즘이 조금 다른 것 같은데?
     // https://gitlab.com/graphviz/graphviz/-/blob/7c0d280b019114c57564c4cf2ac5766280447f00/lib/common/ns.c#L494
     // 코드쪽을 따라가자
 
     // ranks를 바탕으로, tight edge로 이루어진 spanning tree들(spanning forest)을 구한다
-    val tightTrees = findTightTrees(graphEx, ranks).mapIndexed { index, tree -> index to tree }
+    val tightTrees = findTightTrees(ranks).mapIndexed { index, tree -> index to tree }
       .toMap().toMutableMap()
     val nodeToTreeId = tightTrees.flatMap { (index: Int, spanningTree: SpanningTree) ->
       spanningTree.nodes.map { node -> node to index }
@@ -212,9 +105,9 @@ class RankingAlgorithm(
     while (tightTrees.size >= 2) {
       // edge id, slack값
       var leastSlackEdge: Pair<String, Int>? = null
-      graphEx.graph.directedEdges.forEach { (edgeName, edge) ->
+      graph.directedEdges.forEach { (edgeName, edge) ->
         if (nodeToTreeId.getValue(edge.start) != nodeToTreeId.getValue(edge.end)) {
-          val edgeSlack = graphEx.slackOfEdge(edgeName, ranks)
+          val edgeSlack = slackOfEdge(edgeName, ranks)
           if (leastSlackEdge == null || leastSlackEdge!!.second > edgeSlack) {
             leastSlackEdge = Pair(edgeName, edgeSlack)
           }
@@ -222,7 +115,7 @@ class RankingAlgorithm(
       }
       // 그래프가 connected이기 때문에 leastSlackEdge는 null일 수 없음
       val mergingEdgeName = leastSlackEdge!!.first
-      val mergingEdge = graphEx.graph.directedEdges.getValue(mergingEdgeName)
+      val mergingEdge = graph.directedEdges.getValue(mergingEdgeName)
       val mergingSlack = leastSlackEdge!!.second
 
       val merging = nodeToTreeId.getValue(mergingEdge.start)
@@ -254,7 +147,7 @@ class RankingAlgorithm(
     // ranks.ranks 를 기준으로 fixed node
   }
 
-  fun initRank(graphEx: GraphEx): Map<String, Int> {
+  fun initRank(): Map<String, Int> {
     // init_rank:
     // graphEx에는 사이클이 없다고 가정
     // 아직 스캔되지 않은 in-edge가 없는 노드 v에 대해,
@@ -263,20 +156,20 @@ class RankingAlgorithm(
     // - 모든 노드가 스캔될 때까지 위의 과정 반복해서 노드의 랭크 계산해서 반환
     // (topological sort해서 순서대로 실행하는 것처럼 동작)
 
-    val queue = LinkedList(graphEx.graph.nodes.filter {
-      (graphEx.graph.incomingEdges[it] ?: setOf()).isEmpty()
+    val queue = LinkedList(graph.nodes.filter {
+      (graph.incomingEdges[it] ?: setOf()).isEmpty()
     })
     val ranks = mutableMapOf<String, Int>()
 
     fun traverse() {
       if (queue.isNotEmpty()) {
         val node = queue.poll()
-        val incomingEdges = (graphEx.graph.incomingEdges[node] ?: setOf())
+        val incomingEdges = (graph.incomingEdges[node] ?: setOf())
         ranks[node] = if (incomingEdges.isEmpty()) 0 else incomingEdges.maxOf { incomingEdge ->
-          ranks.getValue(incomingEdge.edge.start) + graphEx.edgeMinLength(incomingEdge.edgeName)
+          ranks.getValue(incomingEdge.edge.start) + edgeMinLengths.getValue(incomingEdge.edgeName)
         }
-        val newNodes = graphEx.graph.outgoingsFrom(node).filter { outgoing ->
-          (graphEx.graph.incomingsTo(outgoing) - ranks.keys).isEmpty()
+        val newNodes = graph.outgoingsFrom(node).filter { outgoing ->
+          (graph.incomingsTo(outgoing) - ranks.keys).isEmpty()
         }
         queue.addAll(newNodes)
         traverse()
@@ -302,7 +195,13 @@ class RankingAlgorithm(
     fun toBuilder() = Builder(nodes.toMutableSet(), edges.toMutableSet())
   }
 
-  fun findTightTrees(graphEx: GraphEx, ranks: Map<String, Int>): List<SpanningTree> {
+  fun slackOfEdge(edgeName: String, ranks: Map<String, Int>): Int {
+    val edge = graph.directedEdges.getValue(edgeName)
+    val length = ranks.getValue(edge.end) - ranks.getValue(edge.start)
+    return length - edgeMinLengths.getValue(edgeName)
+  }
+
+  fun findTightTrees(ranks: Map<String, Int>): List<SpanningTree> {
     val visited = mutableSetOf<String>()
     val trees = mutableListOf<SpanningTree>()
 
@@ -312,14 +211,14 @@ class RankingAlgorithm(
       } else {
         val node = queue.poll()
         visited.add(node)
-        val incomings = graphEx.graph.incomingEdges[node] ?: listOf()
-        val outgoings = graphEx.graph.outgoingEdges[node] ?: listOf()
+        val incomings = graph.incomingEdges[node] ?: listOf()
+        val outgoings = graph.outgoingEdges[node] ?: listOf()
         val tightIncomings = incomings
           .filter { incoming -> !cc.nodes.contains(incoming.edge.start) }
-          .filter { incoming -> graphEx.slackOfEdge(incoming.edgeName, ranks) == 0 }
+          .filter { incoming -> slackOfEdge(incoming.edgeName, ranks) == 0 }
         val tightOutgoings = outgoings
           .filter { outgoing -> !cc.nodes.contains(outgoing.edge.end) }
-          .filter { outgoing -> graphEx.slackOfEdge(outgoing.edgeName, ranks) == 0 }
+          .filter { outgoing -> slackOfEdge(outgoing.edgeName, ranks) == 0 }
         val newNodes =
           (tightIncomings.map { it.edge.start } + tightOutgoings.map { it.edge.end }).toSet()
         val newEdges = (tightIncomings + tightOutgoings).map { it.edgeName }
@@ -330,7 +229,7 @@ class RankingAlgorithm(
         findTightTree(queue, cc)
       }
 
-    graphEx.graph.nodes.forEach { node ->
+    graph.nodes.forEach { node ->
       if (!visited.contains(node)) {
         val newTightTree = findTightTree(
           LinkedList(listOf(node)),
@@ -343,72 +242,59 @@ class RankingAlgorithm(
   }
 
   fun splitSpanningTree(
-    graphEx: GraphEx,
     spanningTree: SpanningTree,
     cutEdgeName: String
   ): Pair<Set<String>, Set<String>> {
-    val edge = graphEx.graph.directedEdges.getValue(cutEdgeName)
+    val edge = graph.directedEdges.getValue(cutEdgeName)
     val componentEdges = spanningTree.edges - cutEdgeName
 
     val cutGraph = BaseGraph(
-      graphEx.graph.nodes,
+      graph.nodes,
       mapOf(),
-      componentEdges.associateWith { graphEx.graph.directedEdges.getValue(it) })
+      componentEdges.associateWith { graph.directedEdges.getValue(it) })
     val startComponent = cutGraph.connectedNodesFrom(edge.start)
     val endComponent = cutGraph.connectedNodesFrom(edge.end)
     check(startComponent.intersect(endComponent).isEmpty())
     return Pair(startComponent, endComponent)
   }
 
-  fun cutValue(graphEx: GraphEx, spanningTree: SpanningTree, cutEdgeName: String): Double {
+  fun cutValue(spanningTree: SpanningTree, cutEdgeName: String): Double {
     // cutvalue(e @ Edge(start, end)) =
     // e를 스패닝 트리에서 지웠을 때,
     // (start가 속하는 쪽의 컴포넌트에서 end가 속하는 쪽의 컴포넌트로 가는 모든 엣지의 weight의 합(e의 weight도 포함)) -
     // (end가 속하는 쪽의 컴포넌트에서 start가 속하는 쪽의 컴포넌트로 가는 모든 엣지의 weight의 합)
     check(spanningTree.edges.contains(cutEdgeName))
 
-    val (startComponent, endComponent) = splitSpanningTree(graphEx, spanningTree, cutEdgeName)
-    val cutValue = graphEx.graph.directedEdges.entries.sumOf { (edgeName, edge) ->
+    val (startComponent, endComponent) = splitSpanningTree(spanningTree, cutEdgeName)
+    val cutValue = graph.directedEdges.entries.sumOf { (edgeName, edge) ->
       when {
         startComponent.contains(edge.start) && endComponent.contains(edge.end) ->
-          graphEx.edgeWeight(edgeName)
+          edgeWeights.getValue(edgeName)
         endComponent.contains(edge.start) && startComponent.contains(edge.end) ->
-          -graphEx.edgeWeight(edgeName)
+          -edgeWeights.getValue(edgeName)
         else -> 0.0
       }
     }
     return cutValue
   }
 
-  fun findNegativeCutValueEdge(graphEx: GraphEx, spanningTree: SpanningTree): String? {
+  fun findNegativeCutValueEdge(spanningTree: SpanningTree): String? {
     // spanningTree에 속한 edge들 중 cut value가 음수인 엣지의 이름을 반환. 없으면 null 반환.
-    val leaveEdge = spanningTree.edges.find { cutValue(graphEx, spanningTree, it) < 0 }
+    val leaveEdge = spanningTree.edges.find { cutValue(spanningTree, it) < 0 }
     return leaveEdge
   }
 
   fun findReplacement(
-    graphEx: GraphEx,
     spanningTree: SpanningTree,
     ranks: Map<String, Int>,
     leaveEdge: String
   ): Pair<Pair<Set<String>, Set<String>>, String> {
-    val components = splitSpanningTree(graphEx, spanningTree, leaveEdge)
+    val components = splitSpanningTree(spanningTree, leaveEdge)
     val (startComponent, endComponent) = components
     // endComponent에서 startComponent로 향하는 엣지 중 slack값이 가장 작은 엣지를 반환
-    val replacement = graphEx.graph.directedEdges.entries.filter { (_, edge) ->
+    val replacement = graph.directedEdges.entries.filter { (_, edge) ->
       endComponent.contains(edge.start) && startComponent.contains(edge.end)
-    }.minByOrNull { (edgeName, _) ->
-      graphEx.slackOfEdge(edgeName, ranks)
-    }!!.key
+    }.minByOrNull { (edgeName, _) -> slackOfEdge(edgeName, ranks) }!!.key
     return Pair(components, replacement)
-  }
-
-  fun calculateRanks(): Map<String, Int> {
-    var graphEx = initialGraphEx()
-    graphEx = prepareRankingGraph(graphEx)
-    // TODO undirected edge들을 임의의 directed edge로 바꿔서 처리해도 될까?
-    graphEx = removeCycles(graphEx)
-    // TODO 싸이클을 제거한 뒤에 머지해야될 엣지가 생기면?
-    return calculateRanks(graphEx)
   }
 }

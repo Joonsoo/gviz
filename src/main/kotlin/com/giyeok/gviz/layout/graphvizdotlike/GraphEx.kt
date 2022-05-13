@@ -1,4 +1,4 @@
-package com.giyeok.gviz.graph.algorithms.graphvizdotlike
+package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.graph.BaseGraph
 import com.giyeok.gviz.graph.Edge
@@ -16,6 +16,8 @@ data class GraphEx(
   // `graph`의 edge id -> 이 엣지가 merge/치환한 원본 그래프의 edge id들
   // (원본 그래프의 edge id가 아닐 수도 있음)
   val replacedEdges: Map<String, Set<String>> = mapOf(),
+  // 원본 그래프에서 임시로 삭제된 엣지
+  val removedEdges: Map<String, Edge> = mapOf(),
   val oldNodes: Set<String> = setOf(),
   val oldEdges: Map<String, Edge> = mapOf(),
   val splitEdges: Map<String, List<String>> = mapOf(),
@@ -110,6 +112,18 @@ data class GraphEx(
     )
   }
 
+  fun addVirtualNode(newNodeName: String): GraphEx {
+    checkIsNewNode(newNodeName)
+    return copy(
+      graph = BaseGraph(
+        nodes = graph.nodes + newNodeName,
+        directedEdges = graph.directedEdges,
+        undirectedEdges = graph.undirectedEdges
+      ),
+      virtualNodes = virtualNodes + newNodeName
+    )
+  }
+
   fun addVirtualEdge(newEdgeName: String, edge: Edge): GraphEx {
     checkIsNewEdge(newEdgeName)
     return copy(
@@ -124,14 +138,28 @@ data class GraphEx(
 
   fun addVirtualEdge(edge: Edge): GraphEx = addVirtualEdge(newId(), edge)
 
-  fun splitEdge(edge: String, newEdges: List<Edge>): GraphEx {
-    // newEdges는 모두 virtual edge들
-    TODO()
+  fun removeEdge(edgeName: String): GraphEx {
+    val removingEdge = graph.directedEdges.getValue(edgeName)
+    return copy(
+      graph = BaseGraph(
+        nodes = graph.nodes,
+        directedEdges = graph.directedEdges - edgeName,
+        undirectedEdges = graph.undirectedEdges,
+      ),
+      removedEdges = removedEdges + (edgeName to removingEdge)
+    )
   }
 
-  fun slackOfEdge(edgeName: String, ranks: Map<String, Int>): Int {
-    val edge = graph.directedEdges.getValue(edgeName)
-    val length = ranks.getValue(edge.end) - ranks.getValue(edge.start)
-    return length - edgeMinLength(edgeName)
+  fun splitEdge(edge: String, newEdges: List<String>): GraphEx {
+    // newEdges는 모두 virtual edge들
+    check(virtualEdges.containsAll(newEdges))
+    return copy(
+      graph = BaseGraph(
+        nodes = graph.nodes,
+        directedEdges = graph.directedEdges - edge,
+        undirectedEdges = graph.undirectedEdges,
+      ),
+      splitEdges = splitEdges + (edge to newEdges)
+    )
   }
 }

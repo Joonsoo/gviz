@@ -65,6 +65,8 @@ open class BaseGraph(
     return incomings + connects
   }
 
+  // 엣지의 종류를 불문하고(node에서 나가든, node로 들어오든, node와 연결된 무방향성 그래프이든) node와 연결된
+  // 노드의 목록을 반환
   fun connectedTo(node: String): Set<String> {
     val incomings = (incomingEdges[node] ?: setOf()).map { it.edge.start }.toSet()
     val outgoings = (outgoingEdges[node] ?: setOf()).map { it.edge.end }.toSet()
@@ -135,4 +137,7 @@ open class BaseGraph(
     traverse(LinkedList(listOf(node)))
     return nodes
   }
+
+  override fun toString(): String =
+    "BaseGraph(nodes=$nodes, directedEdges=$directedEdges, undirectedEdges=$undirectedEdges)"
 }

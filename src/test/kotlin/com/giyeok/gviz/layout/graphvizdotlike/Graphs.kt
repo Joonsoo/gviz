@@ -1,4 +1,4 @@
-package com.giyeok.gviz.graph.algorithms.graphvizdotlike
+package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.graph.Edge
 import com.giyeok.gviz.graph.SizedGraph
@@ -57,6 +57,8 @@ object Graphs {
   }
 
   val graph2 = genCharGraph("gh", "eg", "fg", "ae", "af", "bc", "ab", "cd", "dh")
+
+  val graph5 = genCharGraph("ab", "ac", "be", "cd", "de", "ae")
 
   /**
   { rank = same; 1976 Mashey Bourne; }
