@@ -2,7 +2,7 @@ package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.graph.*
 import com.giyeok.gviz.layout.graphvizdotlike.utils.GraphExUtils.adjacentGraph
-import com.giyeok.gviz.render.Position
+import com.giyeok.gviz.draw.Position
 
 // TODO subgraph는 이 클래스를 활용해서 구현할 수 있을 것 같음
 // -> subgraph를 하나의 큰 노드로 보고 포지셔닝을 한 다음,
@@ -14,6 +14,8 @@ import com.giyeok.gviz.render.Position
 class GraphLayout(
   // 노드 중에는 node id가 작은 것이 우선순위가 높다고 가정
   override val graph: SizedGraph,
+  val mainAxisMinSeparation: Double,
+  val subAxisMinSeparation: Double,
   // edge의 weight. 지정하지 않으면 기본값은 1. 음수이면 안됨.
   val edgeWeights: Map<String, Double> = mapOf(),
   // edge의 최소 길이. 지정하지 않으면 기본값은 1. 음수이면 안됨.
@@ -63,12 +65,20 @@ class GraphLayout(
     return orders.ranks.map { it.nodes }
   }
 
-  fun calculateNodeCoords(
-    graphEx: GraphEx,
-    xCoords: Map<String, Double>,
-    yCoords: Map<Int, Double>
+  fun position(mainAxisCoord: Double, subAxisCoord: Double): Position =
+    Position(subAxisCoord, mainAxisCoord)
+
+  fun composeNodeCoords(
+    rankOrders: List<List<String>>,
+    mainCoords: List<Double>,
+    subCoords: Map<String, Double>,
   ): Map<String, Position> {
-    TODO()
+    check(rankOrders.size == mainCoords.size)
+    return rankOrders.zip(mainCoords).flatMap { (rank, mainCoord) ->
+      rank.map { node ->
+        node to position(mainAxisMinSeparation, subCoords.getValue(node))
+      }
+    }.toMap()
   }
 
   override fun layoutGraph(): GraphLayoutResult {
@@ -76,10 +86,11 @@ class GraphLayout(
     // 인접하지 않은(2이상 떨어진) 랭크 사이의 엣지는 가상 노드를 추가해서 모든 엣지가 인접한 랭크 사이에만 존재하도록 만들기
     val (adjacentGraph, aranks) = adjacentGraph(initialGraphEx, ranks)
     val rankOrders = calculateRankOrders(adjacentGraph, aranks)
-    val nodeCoordAlgorithm = NodeCoordAlgorithm(adjacentGraph, rankOrders)
-    val yCoords = nodeCoordAlgorithm.calculateYCoords()
-    val xCoords = nodeCoordAlgorithm.calculateXCoords()
-    val nodeCoords = calculateNodeCoords(adjacentGraph, xCoords, yCoords)
+    val nodeCoordAlgorithm =
+      NodeCoordAlgorithm(adjacentGraph, graph.nodeSizes, rankOrders, 30.0, 20.0)
+    val mainAxisCoords = nodeCoordAlgorithm.calculateMainAxisCoords()
+    val subAxisCoords = nodeCoordAlgorithm.calculateSubAxisCoords()
+    val nodeCoords = composeNodeCoords(rankOrders, mainAxisCoords, subAxisCoords)
     // TODO 중복 엣지 처리
     val edgeSplines = EdgeSplineAlgorithm().calculateEdgeSplines(graph, adjacentGraph, nodeCoords)
     return GraphLayoutResult(nodeCoords.filterKeys { graph.nodes.contains(it) }, edgeSplines)

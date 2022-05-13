@@ -1,6 +1,6 @@
 package com.giyeok.gviz.graph
 
-import com.giyeok.gviz.render.Size
+import com.giyeok.gviz.draw.Size
 
 class SizedGraph(
   val nodeSizes: Map<String, Size>,

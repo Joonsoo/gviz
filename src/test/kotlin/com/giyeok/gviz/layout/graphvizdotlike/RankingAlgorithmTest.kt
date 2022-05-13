@@ -11,7 +11,7 @@ class RankingAlgorithmTest {
 
   @Test
   fun testInitRank() {
-    val g0 = GraphLayout(Graphs.graph2).initialGraphEx
+    val g0 = GraphLayout(Graphs.graph2, 30.0, 20.0).initialGraphEx
     val rankCalc = RankingAlgorithm(g0)
     val g1 = rankCalc.prepareRankingGraph(g0)
 
@@ -30,7 +30,7 @@ class RankingAlgorithmTest {
 
   @Test
   fun testInitialFeasibleTree() {
-    val rankCalc = RankingAlgorithm(GraphLayout(Graphs.graph4).initialGraphEx)
+    val rankCalc = RankingAlgorithm(GraphLayout(Graphs.graph4, 30.0, 20.0).initialGraphEx)
     val g0 = rankCalc.graphEx
 
     val solver = IntNetworkSimplexSolver(g0.graph, g0.edgeMinLengths, g0.edgeWeights)
@@ -40,7 +40,7 @@ class RankingAlgorithmTest {
 
   @Test
   fun testRemoveCycles1() {
-    val g0 = GraphLayout(Graphs.genCharGraph("ab", "ba")).initialGraphEx
+    val g0 = GraphLayout(Graphs.genCharGraph("ab", "ba"), 30.0, 20.0).initialGraphEx
     val rankCalc = RankingAlgorithm(g0)
     val g1 = rankCalc.removeCycles(g0)
     println(g1)
@@ -48,7 +48,8 @@ class RankingAlgorithmTest {
 
   @Test
   fun testRemoveCycles2() {
-    val g0 = GraphLayout(Graphs.genCharGraph("ab", "bc", "cd", "db", "cx")).initialGraphEx
+    val g0 =
+      GraphLayout(Graphs.genCharGraph("ab", "bc", "cd", "db", "cx"), 30.0, 20.0).initialGraphEx
     val rankCalc = RankingAlgorithm(g0)
     val g1 = rankCalc.removeCycles(g0)
     println(g1)
@@ -76,7 +77,7 @@ class RankingAlgorithmTest {
 //        setOf("POSIX", "ksh-POSIX"),
 //      )
 //    )
-    val rankCalc = RankingAlgorithm(GraphLayout(Graphs.graph4).initialGraphEx)
+    val rankCalc = RankingAlgorithm(GraphLayout(Graphs.graph4, 30.0, 20.0).initialGraphEx)
     val ranks = rankCalc.calculateRanks()
     ranks.entries.groupBy { it.value }.entries.sortedBy { it.key }
       .forEach { entry -> println("${entry.key}: ${entry.value.map { it.key }.sorted()}") }

@@ -1,4 +1,4 @@
-package com.giyeok.gviz.render
+package com.giyeok.gviz.draw
 
 data class Position(val x: Double, val y: Double)
 

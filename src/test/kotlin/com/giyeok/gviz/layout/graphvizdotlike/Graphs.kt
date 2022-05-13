@@ -2,7 +2,7 @@ package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.graph.Edge
 import com.giyeok.gviz.graph.SizedGraph
-import com.giyeok.gviz.render.Size
+import com.giyeok.gviz.draw.Size
 
 object Graphs {
   val graph1 = SizedGraph(

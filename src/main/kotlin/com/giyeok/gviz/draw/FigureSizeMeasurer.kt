@@ -1,4 +1,4 @@
-package com.giyeok.gviz.render
+package com.giyeok.gviz.draw
 
 import com.giyeok.gviz.figure.Figure
 

@@ -1,7 +1,7 @@
 package com.giyeok.gviz.graph
 
 import com.giyeok.gviz.figure.Figure
-import com.giyeok.gviz.render.FigureSizeMeasurer
+import com.giyeok.gviz.draw.FigureSizeMeasurer
 
 class FigureGraph(
   val nodeFigures: Map<String, Figure>,

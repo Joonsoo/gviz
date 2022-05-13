@@ -1,9 +1,12 @@
-package com.giyeok.gviz.render.swing
+package com.giyeok.gviz.draw.swing
 
 import com.giyeok.gviz.figure.ContainerFigure
 import com.giyeok.gviz.figure.HorizFlowFigure
 import com.giyeok.gviz.figure.TextFigure
 import com.giyeok.gviz.figure.VertFlowFigure
+import com.giyeok.gviz.render.swing.FigureView
+import com.giyeok.gviz.render.swing.SwingFigureSizeMeasurer
+import com.giyeok.gviz.render.swing.SwingFigureStyles
 import java.awt.Graphics2D
 import javax.swing.JFrame
 import javax.swing.WindowConstants
