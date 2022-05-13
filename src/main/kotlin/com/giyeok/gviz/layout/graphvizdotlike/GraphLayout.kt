@@ -2,7 +2,7 @@ package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.graph.*
 import com.giyeok.gviz.layout.graphvizdotlike.utils.GraphExUtils.adjacentGraph
-import com.giyeok.gviz.draw.Position
+import com.giyeok.gviz.figure.Position
 
 // TODO subgraph는 이 클래스를 활용해서 구현할 수 있을 것 같음
 // -> subgraph를 하나의 큰 노드로 보고 포지셔닝을 한 다음,

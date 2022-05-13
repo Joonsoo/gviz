@@ -1,6 +1,6 @@
 package com.giyeok.gviz.graph
 
-import com.giyeok.gviz.draw.Position
+import com.giyeok.gviz.figure.Position
 
 data class GraphLayoutResult(
   val positions: Map<String, Position>,

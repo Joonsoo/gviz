@@ -1,6 +1,4 @@
-package com.giyeok.gviz.draw
-
-import com.giyeok.gviz.figure.Figure
+package com.giyeok.gviz.figure
 
 interface FigureSizeMeasurer {
   fun measureSize(figure: Figure): Size

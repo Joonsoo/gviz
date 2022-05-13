@@ -1,8 +1,8 @@
 package com.giyeok.gviz.render.swing
 
 import com.giyeok.gviz.figure.*
-import com.giyeok.gviz.draw.FigureSizeMeasurer
-import com.giyeok.gviz.draw.Size
+import com.giyeok.gviz.figure.FigureSizeMeasurer
+import com.giyeok.gviz.figure.Size
 import java.awt.font.FontRenderContext
 import java.awt.geom.Rectangle2D
 import java.lang.Double.max

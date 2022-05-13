@@ -1,6 +1,6 @@
 package com.giyeok.gviz.layout.graphvizdotlike
 
-import com.giyeok.gviz.draw.Size
+import com.giyeok.gviz.figure.Size
 
 class NodeCoordAlgorithm(
   val graph: GraphEx,

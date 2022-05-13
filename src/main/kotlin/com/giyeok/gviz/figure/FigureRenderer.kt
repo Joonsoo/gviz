@@ -1,4 +1,4 @@
-package com.giyeok.gviz.draw
+package com.giyeok.gviz.figure
 
 import java.awt.Color
 import java.awt.Font
