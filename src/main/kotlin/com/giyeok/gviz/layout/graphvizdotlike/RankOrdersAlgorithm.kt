@@ -73,7 +73,7 @@ class RankOrdersAlgorithm(
         }
       }
 
-      val wmedian = if (maxIterations % 2 == 0) wmedian(best) else wmedianReverse(best)
+      val wmedian = wmedian(best, maxIterations % 2 > 0)
       candidate(wmedian)
 
       best.ranks.forEachIndexed { rankIdx, rank ->
@@ -147,10 +147,14 @@ class RankOrdersAlgorithm(
     return RankOrders(ranks).updateFromList(builder)
   }
 
-  fun wmedian(orders: RankOrders): RankOrders {
+  fun wmedian(orders: RankOrders, reverse: Boolean): RankOrders {
     val builder = MutableList<MutableList<String>>(orders.ranks.size) { mutableListOf() }
 
-    builder[0].addAll(orders.ranks[0].nodes)
+    if (reverse) {
+      builder[builder.size - 1].addAll(orders.ranks[builder.size - 1].nodes)
+    } else {
+      builder[0].addAll(orders.ranks[0].nodes)
+    }
 
     // node와 연결된 노드들 중 rankIdx에 속한 노드들의 rankIdx 내에서의 index를 반환
     fun adjPositions(node: String, rankIdx: Int): List<Int> {
@@ -158,10 +162,15 @@ class RankOrdersAlgorithm(
       return upperRank.map { builder[rankIdx].indexOf(it) }.filter { it >= 0 }.sorted()
     }
 
-    for (rankIdx in 1 until builder.size) {
+    val (rankRange, prevRank) = if (reverse) {
+      Pair(builder.size - 2 downTo 0, 1)
+    } else {
+      Pair(1 until builder.size, -1)
+    }
+    for (rankIdx in rankRange) {
       val newNodePositions = mutableListOf<Pair<Double, String>>()
       orders.ranks[rankIdx].nodes.forEach { node ->
-        val positions = adjPositions(node, rankIdx - 1).map { it.toDouble() }
+        val positions = adjPositions(node, rankIdx + prevRank).map { it.toDouble() }
         when {
           positions.isEmpty() ->
             newNodePositions.add(Pair(-1.0, node))
@@ -182,11 +191,5 @@ class RankOrdersAlgorithm(
     }
 
     return orders.updateFromList(builder)
-  }
-
-  // wmedian을 반대로 수행
-  fun wmedianReverse(orders: RankOrders): RankOrders {
-    // TODO 귀찮아서.. 나중에 구현할 것.
-    return wmedian(orders)
   }
 }

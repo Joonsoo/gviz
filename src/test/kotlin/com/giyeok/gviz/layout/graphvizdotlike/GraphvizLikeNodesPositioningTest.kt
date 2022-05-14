@@ -39,5 +39,6 @@ class GraphvizLikeNodesPositioningTest {
     val mainAxisCoords = nodeCoordAlgorithm.calculateMainAxisCoords()
     println(mainAxisCoords)
     val subAxisCoords = nodeCoordAlgorithm.calculateSubAxisCoords()
+    println(subAxisCoords)
   }
 }

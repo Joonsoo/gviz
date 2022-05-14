@@ -1,4 +1,4 @@
-package com.giyeok.gviz.figure
+package com.giyeok.gviz.dev.hotreload
 
 import java.awt.Color
 import java.awt.Font
@@ -8,9 +8,6 @@ import javax.swing.text.DefaultStyledDocument
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
-
-interface FigureRenderer {
-}
 
 fun main() {
   val frame = JFrame()

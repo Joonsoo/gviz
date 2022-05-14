@@ -16,8 +16,8 @@ class SwingFigureRenderer(val styles: SwingFigureStyles) {
         val point = transform.apply(-rectangle.x, -rectangle.y)
         // TODO styles 처리
         g2.font = styles.font
-        g2.color = Color.YELLOW
-        g2.fillRect(leftTop.x, leftTop.y, rectangle.width.toInt(), rectangle.height.toInt())
+//        g2.color = Color.YELLOW
+//        g2.fillRect(leftTop.x, leftTop.y, rectangle.width.toInt(), rectangle.height.toInt())
         g2.color = Color.BLACK
         g2.drawString(figure.text, point.x, point.y)
       }

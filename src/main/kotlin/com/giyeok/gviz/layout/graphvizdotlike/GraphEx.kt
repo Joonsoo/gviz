@@ -162,4 +162,20 @@ data class GraphEx(
       splitEdges = splitEdges + (edge to newEdges)
     )
   }
+
+  fun setEdgeMinLength(edgeName: String, minLength: Int): GraphEx {
+    check(graph.directedEdges.contains(edgeName))
+    return copy(edgeMinLengths = edgeMinLengths + (edgeName to minLength))
+  }
+
+  fun setEdgeWeight(edgeName: String, weight: Double): GraphEx {
+    check(graph.directedEdges.contains(edgeName))
+    return copy(edgeWeights = edgeWeights + (edgeName to weight))
+  }
+
+  fun fullEdgeMinLengths(): Map<String, Int> =
+    edgeMinLengths + (graph.edgeLabels - edgeMinLengths.keys).associateWith { 1 }
+
+  fun fullEdgeWeights(): Map<String, Double> =
+    edgeWeights + (graph.edgeLabels - edgeWeights.keys).associateWith { 1.0 }
 }

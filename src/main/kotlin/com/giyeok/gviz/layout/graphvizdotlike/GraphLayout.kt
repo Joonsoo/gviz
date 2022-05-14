@@ -70,13 +70,13 @@ class GraphLayout(
 
   fun composeNodeCoords(
     rankOrders: List<List<String>>,
-    mainCoords: List<Double>,
-    subCoords: Map<String, Double>,
+    mainAxisCoords: List<Double>,
+    subAxisCoords: Map<String, Double>,
   ): Map<String, Position> {
-    check(rankOrders.size == mainCoords.size)
-    return rankOrders.zip(mainCoords).flatMap { (rank, mainCoord) ->
+    check(rankOrders.size == mainAxisCoords.size)
+    return rankOrders.zip(mainAxisCoords).flatMap { (rank, mainAxisCoord) ->
       rank.map { node ->
-        node to position(mainAxisMinSeparation, subCoords.getValue(node))
+        node to position(mainAxisCoord, subAxisCoords.getValue(node))
       }
     }.toMap()
   }

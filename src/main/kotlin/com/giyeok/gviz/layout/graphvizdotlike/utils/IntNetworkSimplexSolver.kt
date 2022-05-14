@@ -15,6 +15,11 @@ class IntNetworkSimplexSolver(
   val edgeMinLengths: Map<String, Int>,
   val edgeWeights: Map<String, Double>,
 ) {
+  init {
+    check(graph.edgeLabels.equals(edgeMinLengths.keys))
+    check(graph.edgeLabels.equals(edgeWeights.keys))
+  }
+
   // 각 노드의 랭크 계산. 랭크가 작을수록 위(혹은 왼쪽)에 나옴.
   // minRanks와 maxRanks는 여기서 반영함. 가장 작은 랭크는 0.
   // sameRanks는 여기서는 반영하지 않고 adjustRanks에서 적용함.

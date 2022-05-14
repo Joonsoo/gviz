@@ -1,9 +1,12 @@
 package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.figure.Size
+import com.giyeok.gviz.graph.BaseGraph
+import com.giyeok.gviz.graph.Edge
+import com.giyeok.gviz.layout.graphvizdotlike.utils.IntNetworkSimplexSolver
 
 class NodeCoordAlgorithm(
-  val graph: GraphEx,
+  val graphEx: GraphEx,
   // graph에는 가상 노드가 포함되어 있기 때문에 graph의 모든 노드의 size가 정의되지 않을 수 있음
   val nodeSizes: Map<String, Size>,
   val rankOrders: List<List<String>>,
@@ -18,6 +21,10 @@ class NodeCoordAlgorithm(
   val mixedNodesEdgeWeight: Int = 2,
   val virtualNodesEdgeWeight: Int = 8,
 ) {
+  init {
+    check(graphEx.graph.undirectedEdges.isEmpty())
+  }
+
   // TODO top-bottom인지 left-right인지에 따라 달라지도록
   fun mainAxisSize(node: String): Double? = nodeSizes[node]?.height
   fun subAxisSize(node: String): Double? = nodeSizes[node]?.width
@@ -41,7 +48,56 @@ class NodeCoordAlgorithm(
   // 노드 ID -> X축 좌표.
   fun calculateSubAxisCoords(): Map<String, Double> {
     // 논문에서 설명하는대로 그래프를 바꿔서 NetworkSimplexSolver로 계산하면 된다는데..
+    // 논문에는 여러가지 휴리스틱을 설명하고 있는데 랭킹 계산할 때 사용한 network simplex를 하면 된다고 함. 위의 휴리스틱이 필요한건가?
 
-    TODO()
+    var auxGraph = graphEx.copy(
+      graph = BaseGraph(
+        nodes = graphEx.graph.nodes,
+        directedEdges = mapOf(),
+        undirectedEdges = mapOf()
+      )
+    )
+
+    graphEx.graph.directedEdges.forEach { (edgeName, edge) ->
+      val edgeNode = auxGraph.newId()
+      auxGraph = auxGraph.addVirtualNode(edgeNode)
+      val edgeWeight = auxGraph.edgeWeight(edgeName)
+      val edgeTypeWeight: Int = when {
+        auxGraph.virtualNodes.contains(edge.start) && auxGraph.virtualNodes.contains(edge.end) ->
+          virtualNodesEdgeWeight
+        !auxGraph.virtualNodes.contains(edge.start) && !auxGraph.virtualNodes.contains(edge.end) ->
+          realNodesEdgeWeight
+        else -> mixedNodesEdgeWeight
+      }
+      val edgeToStartEdge = auxGraph.newId()
+      val edgeToEndEdge = auxGraph.newId()
+      auxGraph = auxGraph.addVirtualEdge(edgeToStartEdge, Edge(edgeNode, edge.start))
+      auxGraph = auxGraph.addVirtualEdge(edgeToEndEdge, Edge(edgeNode, edge.end))
+      auxGraph = auxGraph.setEdgeMinLength(edgeToStartEdge, 0)
+      auxGraph = auxGraph.setEdgeMinLength(edgeToEndEdge, 0)
+      auxGraph = auxGraph.setEdgeWeight(edgeToStartEdge, edgeWeight * edgeTypeWeight)
+      auxGraph = auxGraph.setEdgeWeight(edgeToEndEdge, edgeWeight * edgeTypeWeight)
+    }
+
+    rankOrders.forEach { rankNodes ->
+      rankNodes.windowed(2).forEach { adjNodes ->
+        val leftNode = adjNodes[0]
+        val rightNode = adjNodes[1]
+        val leftNodeSize = subAxisSize(leftNode) ?: 0.0
+        val rightNodeSize = subAxisSize(rightNode) ?: 0.0
+        val adjNodesEdge = auxGraph.newId()
+        auxGraph = auxGraph.addVirtualEdge(adjNodesEdge, Edge(leftNode, rightNode))
+        auxGraph = auxGraph.setEdgeMinLength(
+          adjNodesEdge,
+          ((leftNodeSize + rightNodeSize) / 2 + subAxisMinSeparation).toInt()
+        )
+      }
+    }
+
+    return IntNetworkSimplexSolver(
+      auxGraph.graph,
+      auxGraph.fullEdgeMinLengths(),
+      auxGraph.fullEdgeWeights()
+    ).solve().mapValues { it.value.toDouble() }
   }
 }

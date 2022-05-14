@@ -128,12 +128,11 @@ class RankingAlgorithm(
     graphEx = removeCycles(graphEx)
     // TODO 싸이클을 제거한 뒤에 머지해야될 엣지가 생기면?
 
-    val edgeMinLengths = graphEx.edgeMinLengths +
-      (graphEx.graph.edgeLabels - graphEx.edgeMinLengths.keys).associateWith { 1 }
-    val edgeWeights = graphEx.edgeWeights +
-      (graphEx.graph.edgeLabels - graphEx.edgeWeights.keys).associateWith { 1.0 }
-    val ranks = IntNetworkSimplexSolver(graphEx.graph, edgeMinLengths, edgeWeights)
-      .solve()
+    val ranks = IntNetworkSimplexSolver(
+      graphEx.graph,
+      graphEx.fullEdgeMinLengths(),
+      graphEx.fullEdgeWeights(),
+    ).solve()
 
     // TODO balance: 이건 뭔지 잘 모르겠음
 
