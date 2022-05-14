@@ -21,7 +21,7 @@ fun main() {
   val g2 = (frame.graphics as Graphics2D)
   val styles = SwingFigureStyles()
 
-  val measurer = SwingFigureSizeMeasurer(styles, g2.fontRenderContext)
+  val measurer = SwingFigureSizeMeasurer(styles, g2)
 
   val figure = ContainerFigure(
     HorizFlowFigure(

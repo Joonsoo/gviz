@@ -6,7 +6,7 @@ import java.awt.Graphics2D
 
 class SwingFigureRenderer(val styles: SwingFigureStyles) {
   fun draw(g2: Graphics2D, transform: Transform, figure: Figure) {
-    val measurer = SwingFigureSizeMeasurer(styles, g2.fontRenderContext)
+    val measurer = SwingFigureSizeMeasurer(styles, g2)
 
     when (figure) {
       is EmptyFigure -> TODO()

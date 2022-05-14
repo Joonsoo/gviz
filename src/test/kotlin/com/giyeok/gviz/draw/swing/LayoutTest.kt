@@ -34,7 +34,7 @@ fun main() {
   )
   val styles = SwingFigureStyles()
 
-  val figureSizeMeasurer = SwingFigureSizeMeasurer(styles, g2.fontRenderContext)
+  val figureSizeMeasurer = SwingFigureSizeMeasurer(styles, g2)
   val sizedGraph = figureGraph.toSizedNodesGraph(figureSizeMeasurer)
   val layout = GraphLayout(sizedGraph, 30.0, 20.0).layoutGraph()
 
