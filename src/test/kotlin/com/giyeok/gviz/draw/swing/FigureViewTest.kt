@@ -21,35 +21,34 @@ fun main() {
 
   val styles = SwingFigureStyles()
 
-  val figureView = FigureView(
-    ContainerFigure(
-      VertFlowFigure(
-        listOf(
-          TextFigure("Hello", ""),
-          HorizFlowFigure(
-            listOf(
-              ContainerFigure(TextFigure("1", ""), ""),
-              ContainerFigure(TextFigure("2", ""), ""),
-              ContainerFigure(TextFigure("3", ""), ""),
-              VertFlowFigure(
-                listOf(
-                  TextFigure("가나다", ""),
-                  TextFigure("라마바", ""),
-                  TextFigure("XYZ", ""),
-                  TextFigure("XYZ", ""),
-                ), ""
-              )
-            ), ""
-          ),
-          TextFigure("Hello", ""),
-          TextFigure("Hello", ""),
+  val figure = ContainerFigure(
+    VertFlowFigure(
+      listOf(
+        TextFigure("Hello", ""),
+        HorizFlowFigure(
+          listOf(
+            ContainerFigure(TextFigure("1", ""), ""),
+            ContainerFigure(TextFigure("2", ""), ""),
+            ContainerFigure(TextFigure("3", ""), ""),
+            VertFlowFigure(
+              listOf(
+                TextFigure("가나다", ""),
+                TextFigure("라마바", ""),
+                TextFigure("XYZ", ""),
+                TextFigure("XYZ", ""),
+              ), ""
+            )
+          ), ""
         ),
-        ""
+        TextFigure("Hello", ""),
+        TextFigure("Hello", ""),
       ),
       ""
     ),
-    styles
+    ""
   )
+
+  val figureView = FigureView(figure, styles)
 
   frame.add(figureView)
 

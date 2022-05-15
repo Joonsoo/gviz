@@ -1,4 +1,4 @@
- package com.giyeok.gviz.render.swing
+package com.giyeok.gviz.render.swing
 
 import com.giyeok.gviz.figure.*
 import com.giyeok.gviz.figure.FigureSizeMeasurer
@@ -16,12 +16,11 @@ class SwingFigureSizeMeasurer(
   data class GridSizes(val columnWidths: List<Double>, val rowHeights: List<Double>)
 
   fun measureTextFigure(figure: TextFigure): Rectangle2D {
-    styles.applyStyle(g2, figure.styleClass)
-    return styles.font.getStringBounds(figure.text, g2.fontRenderContext)
+    val style = styles.getTextStyle(figure.styleClass)
+    return style.font.getStringBounds(figure.text, g2.fontRenderContext)
   }
 
   fun measureGridSizes(figure: GridFigure): GridSizes {
-    styles.applyStyle(g2, figure.styleClass)
     val columns = figure.rows[0].cells.size
     val colWidths = MutableList(columns) { 0.0 }
     val rowHeights = MutableList(figure.rows.size) { 0.0 }
@@ -42,32 +41,46 @@ class SwingFigureSizeMeasurer(
     is ImageFigure -> TODO()
     is ContainerFigure -> {
       // TODO border
-      styles.applyStyle(g2, figure.styleClass)
       val bodySize = measureSize(figure.body)
-      Size(bodySize.width + 4, bodySize.height + 4)
+      val style = styles.getContainerStyle(figure.styleClass)
+      Size(
+        style.marginLeft + style.paddingLeft + style.borderWidth * 2 +
+          bodySize.width + style.paddingRight + style.marginRight,
+        style.marginTop + style.paddingTop + style.borderWidth * 2 +
+          bodySize.height + style.paddingBottom + style.marginBottom,
+      )
     }
     is VertFlowFigure -> {
-      styles.applyStyle(g2, figure.styleClass)
       val children = figure.children.map { measureSize(it) }
       if (children.isEmpty()) {
         Size(0.0, 0.0)
       } else {
-        Size(children.maxOf { it.width }, children.sumOf { it.height })
+        val style = styles.getVertFlowStyle(figure.styleClass)
+        Size(
+          children.maxOf { it.width },
+          children.sumOf { it.height } + (style.separation * (children.size - 1)))
       }
     }
     is HorizFlowFigure -> {
-      styles.applyStyle(g2, figure.styleClass)
       val children = figure.children.map { measureSize(it) }
       if (children.isEmpty()) {
         Size(0.0, 0.0)
       } else {
-        Size(children.sumOf { it.width }, children.maxOf { it.height })
+        val style = styles.getHorizFlowStyle(figure.styleClass)
+        Size(children.sumOf { it.width } + (style.separation * (children.size - 1)),
+          children.maxOf { it.height })
       }
     }
     is GridFigure -> {
-      styles.applyStyle(g2, figure.styleClass)
       val gridSizes = measureGridSizes(figure)
-      Size(gridSizes.columnWidths.sum(), gridSizes.rowHeights.sum())
+      val style = styles.getGridStyle(figure.styleClass)
+      val width = if (gridSizes.columnWidths.isEmpty()) 0.0 else {
+        gridSizes.columnWidths.sum() + (style.colsSeparation * (gridSizes.columnWidths.size - 1))
+      }
+      val height = if (gridSizes.rowHeights.isEmpty()) 0.0 else {
+        gridSizes.rowHeights.sum() + (style.rowsSeparation * (gridSizes.rowHeights.size - 1))
+      }
+      Size(width, height)
     }
   }
 }

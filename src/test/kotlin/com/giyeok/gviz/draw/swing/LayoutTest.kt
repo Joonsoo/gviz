@@ -16,7 +16,7 @@ class LayoutTest {
 }
 
 fun main() {
-  val graph = Graphs.graph5 as BaseGraph
+  val graph = Graphs.graph4 as BaseGraph
 
   val frame = JFrame()
 
