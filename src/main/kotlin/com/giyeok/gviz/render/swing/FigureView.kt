@@ -1,14 +1,17 @@
 package com.giyeok.gviz.render.swing
 
 import com.giyeok.gviz.figure.Figure
+import java.awt.Dimension
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.geom.Path2D
 import javax.swing.JComponent
 
-class FigureView(val figure: Figure, styles: SwingFigureStyles) : JComponent() {
+class FigureView(val figure: Figure, val styles: SwingFigureStyles) : JComponent() {
   private val renderer = SwingFigureRenderer(styles)
+
+  private var sizeInitialized = false
 
   override fun paintComponent(g: Graphics) {
     super.paintComponent(g)
@@ -19,6 +22,17 @@ class FigureView(val figure: Figure, styles: SwingFigureStyles) : JComponent() {
       RenderingHints.VALUE_TEXT_ANTIALIAS_ON
     )
     renderer.draw(g2, Transform(0.0, 0.0), figure)
+
+    if (!sizeInitialized) {
+      sizeInitialized = true
+
+      val sizeMeasurer = SwingFigureSizeMeasurer(styles, g2)
+
+      val figureSize = sizeMeasurer.measureSize(figure)
+      println(figureSize)
+
+      preferredSize = Dimension(figureSize.width.toInt(), figureSize.height.toInt())
+    }
 
 //    val path = Path2D.Double()
 //    path.moveTo(100.0, 100.0)

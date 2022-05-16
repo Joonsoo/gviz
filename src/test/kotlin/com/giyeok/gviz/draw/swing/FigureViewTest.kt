@@ -7,6 +7,7 @@ import com.giyeok.gviz.figure.VertFlowFigure
 import com.giyeok.gviz.render.swing.FigureView
 import com.giyeok.gviz.render.swing.SwingFigureStyles
 import javax.swing.JFrame
+import javax.swing.JScrollPane
 import javax.swing.WindowConstants
 
 class FigureViewTest {
@@ -26,19 +27,23 @@ fun main() {
       listOf(
         TextFigure("Hello", ""),
         HorizFlowFigure(
-          listOf(
-            ContainerFigure(TextFigure("1", ""), ""),
-            ContainerFigure(TextFigure("2", ""), ""),
-            ContainerFigure(TextFigure("3", ""), ""),
-            VertFlowFigure(
-              listOf(
-                TextFigure("가나다", ""),
-                TextFigure("라마바", ""),
-                TextFigure("XYZ", ""),
-                TextFigure("XYZ", ""),
-              ), ""
+          (0 until 3).flatMap {
+            listOf(
+              ContainerFigure(TextFigure("1", ""), ""),
+              ContainerFigure(TextFigure("2", ""), ""),
+              ContainerFigure(TextFigure("3", ""), ""),
+              VertFlowFigure(
+                (0 until 4).flatMap {
+                  listOf(
+                    TextFigure("가나다", ""),
+                    TextFigure("라마바", ""),
+                    TextFigure("XYZ", ""),
+                    TextFigure("XYZ", ""),
+                  )
+                }, ""
+              )
             )
-          ), ""
+          }, ""
         ),
         TextFigure("Hello", ""),
         TextFigure("Hello", ""),
@@ -48,8 +53,7 @@ fun main() {
     ""
   )
 
-  val figureView = FigureView(figure, styles)
-
+  val figureView = JScrollPane(FigureView(figure, styles))
   frame.add(figureView)
 
   figureView.repaint()
