@@ -1,0 +1,15 @@
+import maven
+from bibix.plugins import ktjvm
+
+main = ktjvm.library(
+  srcs = glob("main/kotlin/**.kt"),
+)
+
+test = ktjvm.library(
+  srcs = glob("test/kotlin/**.kt"),
+  deps = [
+    main,
+    maven.artifact("com.google.truth", "truth", "1.1.3"),
+  ]
+)
+
