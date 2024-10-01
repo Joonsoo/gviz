@@ -2,7 +2,7 @@ package com.giyeok.gviz.layout.graphvizdotlike
 
 import com.giyeok.gviz.layout.graphvizdotlike.utils.GraphExUtils.adjacentGraph
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.Test
+import org.junit.Test
 
 class GraphvizLikeNodesPositioningTest {
   @Test

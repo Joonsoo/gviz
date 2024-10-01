@@ -1,6 +1,9 @@
 import maven
 from bibix.plugins import ktjvm
 
+var ktjvm.compilerVersion = "2.0.20"
+var ktjvm.sdkVersion = "2.0.20"
+
 main = ktjvm.library(
   srcs = glob("main/kotlin/**.kt"),
 )
@@ -9,7 +12,7 @@ test = ktjvm.library(
   srcs = glob("test/kotlin/**.kt"),
   deps = [
     main,
+    maven.artifact("org.jetbrains.kotlin", "kotlin-test", "2.0.20"),
     maven.artifact("com.google.truth", "truth", "1.1.3"),
   ]
 )
-

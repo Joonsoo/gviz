@@ -5,7 +5,7 @@ import com.giyeok.gviz.layout.graphvizdotlike.utils.IntNetworkSimplexSolver
 import com.giyeok.gviz.layout.graphvizdotlike.RankingAlgorithm
 import com.giyeok.gviz.layout.graphvizdotlike.utils.GraphExUtils.adjacentGraph
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.Test
+import org.junit.Test
 
 class RankingAlgorithmTest {
 
